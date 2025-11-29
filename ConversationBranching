@@ -51,6 +51,7 @@ switch (_npcName) do {
 
 						[_civLocal, "010315b", "Military truck? There has been a lot of traffic since yesterday… but", 5.5] call cwv_fnc_playLine;
 
+						/// --- BRANCHT DIALOG START ---
 						[" ", " "] spawn BIS_fnc_showSubtitle;
 
 						private _choices = [
@@ -83,6 +84,8 @@ switch (_npcName) do {
 						};
 
 						_civLocal setVariable ["dialogBranch", _selectedBranch, true];
+						
+						// Sleceting the different path based on our selection
 
 						switch _selectedBranch do {
 
@@ -101,6 +104,7 @@ switch (_npcName) do {
 								[Dimitry,   "010317b", "Could be the lead we need. Let's check it out.", 4] call cwv_fnc_playLine;
 
 								sleep 6;
+								/// example how to call a trigger: trigger2=TRUE; *and in the trigger set condition 'call{trigger2}'
 
 								[_civLocal] call cwv_fnc_closeConversation;
 							};
