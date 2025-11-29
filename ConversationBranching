@@ -1,0 +1,131 @@
+/*
+    storyConversation.sqf
+    Simple & robust conversation dispatcher.
+*/
+
+params ["_civ"];
+if (isNull _civ) exitWith { diag_log "❌ storyConversation: _civ is NULL"; };
+
+closeDialog 0;
+
+// Logical NPC name
+private _npcName = _civ getVariable ["cwv_varName", name _civ];
+
+// Who is speaking
+private _player = if (player isEqualTo Dimitry) then { Dimitry } else { Vasili };
+
+switch (_npcName) do {
+
+    case "npc_commander": {
+
+        private _stage = _civ getVariable ["dialogStage", "01-00-10"];
+
+        switch (_stage) do {
+
+            // ---------------------------------------------------------
+            // FIRST TIME TALK
+            // ---------------------------------------------------------
+            case "01-00-10": {
+                [_civ, _player] spawn 
+				{
+                    params ["_civLocal", "_player"];
+
+                    [_civLocal, "010010", "You boys looking for trouble or just ghosts?", 3] call cwv_fnc_playLine;
+                    [Dimitry,    "010011", "We’re looking for a stolen military truck. Anything pass through recently?", 6.3] call cwv_fnc_playLine;
+                    [_civLocal, "010012", "Maybe. Engines in the valley were echoing last night… definitely not tractors.", 8] call cwv_fnc_playLine;
+
+
+					/// --- seting below already new dialog stage
+                    _civLocal setVariable ["dialogStage", "01-00-10b", true];
+                    [_civLocal] call cwv_fnc_closeConversation;
+                };
+            };
+
+            // ---------------------------------------------------------
+            // SECOND TALK (BRANCHING POINT)
+            // ---------------------------------------------------------
+			case "01-00-10b": 
+				{
+					[_civ, _player] spawn {
+						params ["_civLocal", "_player"];
+
+						[_civLocal, "010315b", "Military truck? There has been a lot of traffic since yesterday… but", 5.5] call cwv_fnc_playLine;
+
+						[" ", " "] spawn BIS_fnc_showSubtitle;
+
+						private _choices = [
+							["Aggressive talk",     "01-03-17",  "They are obviously smugglers. I could push them to talk."],
+							["Diplomatic solution", "01-03-14b", "Maybe they know about the stolen truck."]
+						];
+
+						// Reset old result
+						cwr_dialogResult = nil;
+
+						// 2nd param is ignored by your function, but we can still pass it
+						[_choices, "cwr_dialogResult"] call cwv_fnc_populateDialogChoices;
+
+						// Wait for selection
+						waitUntil {
+							isNull findDisplay 1236 && { !isNil "cwr_dialogResult" }
+						};
+
+						systemChat format ["DEBUG: dialogResult = %1", cwr_dialogResult];
+
+						private _selectedBranch = cwr_dialogResult;
+
+						// Strip quotes, if stored with quotes
+						if (
+							count _selectedBranch > 2 &&
+							{ (_selectedBranch select [0,1]) == """" &&
+							  (_selectedBranch select [count _selectedBranch - 1, 1]) == """" }
+						) then {
+							_selectedBranch = _selectedBranch select [1, count _selectedBranch - 2];
+						};
+
+						_civLocal setVariable ["dialogBranch", _selectedBranch, true];
+
+						switch _selectedBranch do {
+
+							case "01-03-17": {
+								[Dimitry,   "010317", "We’re here about the stolen truck. If this is a misunderstanding, clear it up—now.", 6] call cwv_fnc_playLine;
+								[_civLocal, "010318", "Misunderstanding my ass. You’re military!", 6.5] call cwv_fnc_playLine;
+								[_civLocal, "010319", "We trusted the wrong man.", 4.5] call cwv_fnc_playLine;
+
+								[_civLocal] call cwv_fnc_closeConversation;
+							};
+
+							case "01-03-14b": {
+								[Dimitry,   "010314b", "Look, we’re tracking a stolen military truck — not civilian gear.", 9] call cwv_fnc_playLine;
+								[_civLocal, "010315b", "Military truck? There has been a lot of traffic…", 5.5] call cwv_fnc_playLine;
+								[_civLocal, "010316b", "We saw one. Use the watchtower southwest.", 10] call cwv_fnc_playLine;
+								[Dimitry,   "010317b", "Could be the lead we need. Let's check it out.", 4] call cwv_fnc_playLine;
+
+								sleep 6;
+
+								[_civLocal] call cwv_fnc_closeConversation;
+							};
+
+							default {};
+						};
+					};
+				};
+
+
+
+            // ---------------------------------------------------------
+            default {
+                [_civ] spawn {
+                    params ["_civLocal"];
+                    ["", format ["%1 has nothing to say.", name _civLocal]] spawn BIS_fnc_showSubtitle;
+                };
+            };
+        };
+    };
+
+    default {
+        [_civ] spawn {
+            params ["_civLocal"];
+            ["", format ["%1 has nothing to say.", name _civLocal]] spawn BIS_fnc_showSubtitle;
+        };
+    };
+};
