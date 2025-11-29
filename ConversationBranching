@@ -70,7 +70,7 @@ switch (_npcName) do {
 							isNull findDisplay 1236 && { !isNil "cwr_dialogResult" }
 						};
 
-						systemChat format ["DEBUG: dialogResult = %1", cwr_dialogResult];
+						/// ***DEBUG *** systemChat format ["DEBUG: dialogResult = %1", cwr_dialogResult];
 
 						private _selectedBranch = cwr_dialogResult;
 
