@@ -1,0 +1,95 @@
+/*
+    storyConversation.sqf
+    Simple & robust conversation dispatcher.
+*/
+
+params ["_civ"];
+
+// Safety first
+if (isNull _civ) exitWith { diag_log "❌ storyConversation: _civ is NULL"; };
+
+// Close old dialog UI (if still in use)
+closeDialog 0;
+
+// Resolve NPC logical name from variable
+private _npcName = _civ getVariable ["cwv_varName", name _civ];
+
+// Resolve which player is the one speaking
+private _player = if (player isEqualTo Dimitry) then { Dimitry } else { Vasili };
+
+// DEBUG (optional)
+// systemChat format ["NPC '%1' has varName '%2'", _civ, _npcName];
+
+// ───────────────────────────────────────── NPC DISPATCH ──────────────────────
+switch (_npcName) do 
+{
+
+    // ==============================================================
+    //   NPC: OFFICER / COMMANDER
+    // ==============================================================
+
+    case "npc_commander":   /// <-- It is the cwv_varName instead of actuall units name "npc_officer";
+    {
+
+        // Get his dialog stage
+        private _stage = _civ getVariable ["dialogStage", "01-00-10"];
+
+        switch (_stage) do
+        {
+
+            // ----------------- FIRST TIME TALK --------------------
+            case "01-00-10":
+            {
+                [_civ, _player] spawn 
+                {
+                    params ["_civLocal", "_player"];
+
+                    [ _civLocal, "010010", "You boys looking for trouble or just ghosts?", 3 ] call cwv_fnc_playLine;
+                    [ Dimitry,   "010011", "We’re looking for a stolen military truck. Anything pass through recently?", 6.3 ] call cwv_fnc_playLine;
+                    [ _civLocal, "010012", "Maybe. Engines in the valley were echoing last night… definitely not tractors.", 8 ] call cwv_fnc_playLine;
+					
+					// --- !!! --- Close conversation and resume
+					[_civLocal] call cwv_fnc_closeConversation;
+                    // Advance stage
+                    _civLocal setVariable ["dialogStage", "01-00-10b", true];
+                };
+            };
+
+            // ----------------- REPEAT TALK ------------------------
+            case "01-00-10b":
+            {
+                [_civ, _player] spawn 
+                {
+                    params ["_civLocal", "_player"];
+                    [ _civLocal, "010315b", "Military truck? There has been a lot of traffic since yesterday… but", 5.5] call cwv_fnc_playLine;
+                };
+            };
+
+            // ----------------- FALLBACK ---------------------------
+            default
+            {
+                [_civ] spawn 
+                {
+                    params ["_civLocal"];
+                    private _n = name _civLocal;
+                    ["", format ["%1 has got nothing to say.", _n]] spawn BIS_fnc_showSubtitle;
+                };
+            };
+        };
+    };
+
+
+    // ==============================================================
+    //  DEFAULT: NPC variable not recognized
+    // ==============================================================
+
+    default 
+    {
+        [_civ] spawn 
+        {
+            params ["_civLocal"];
+            private _n = name _civLocal;
+            ["", format ["%1 has got nothing to say.", _n]] spawn BIS_fnc_showSubtitle;
+        };
+    };
+};
